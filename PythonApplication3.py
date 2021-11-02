@@ -24,8 +24,7 @@ import errno
 source = "https://www.biqugeapp.com"
 rex = r"""(?<=[}\]"'])\s*,\s*(?!\s*[{["'])"""
 
-def search():
-	keywords = input("输入书名搜索:")
+def search(keywords):
 	keyname = urllib.parse.quote(keywords)
 	result = []
 	try:
@@ -85,12 +84,25 @@ def turnpage(page):
 
 
 
+
+
 def read():
     os.system('clear')
     cprint(figlet_format('Reader', font='doom'), 'green', attrs=['bold'])
     #os.system('clear') use 'cls' for windows
+    if not os.path.isfile('Favorites.txt'):
+        fp = open("Favorites.txt", 'w')
+    else:
+        fp = open('Favorites.txt', 'r')
+    try:
+        favorites = fp.readlines()
+    except:
+        print('favorites.txt dont have record ')
     print('\x1b[6;30;42m' + 'Read the novel in your terminal' + '\x1b[0m')
-    search_result_raw = search()
+    keywords = input("输入书名搜索:")
+    readed_li = []
+    # readed_li.append(keywords)
+    search_result_raw = search(keywords)
     search_result = PrettyTable(["Index", "Title", "Author", "Updated to"])
     search_indexof = 1
     for result_raw in search_result_raw:
@@ -98,6 +110,7 @@ def read():
         search_indexof += 1
     print(search_result)
     search_indexof_selected = input('Select a index to continue: ')
+    readed_li.append([search_result_raw[int(search_indexof_selected) - 1][1], search_result_raw[int(search_indexof_selected) - 1][0], search_result_raw[int(search_indexof_selected) - 1][2]])
     os.system('clear')
     print('\x1b[6;30;42m' + search_result_raw[int(search_indexof_selected) - 1][1] + '\x1b[0m')
     table_web, table_result_raw = table(search_result_raw[int(search_indexof_selected) - 1][0])
