@@ -7,9 +7,11 @@ import os
 import sys
 import json
 import re
+import pymysql
 
 from colorama import init
 import ssl
+from pymysql.cursors import Cursor
 ssl._create_default_https_context = ssl._create_unverified_context
 
 # from utils.plots import output_to_target
@@ -42,7 +44,6 @@ def search(keywords):
 			items['Author'], 
 			items['Desc'][:20]]
         )
-
 	return result
 
 def table(bookid):
@@ -82,25 +83,57 @@ def turnpage(page):
 		pointer_p = 'none'
 	return [pointer_p, pointer_n]
 
+def createdb():
+    global cursor, db
+    try:
+        db = pymysql.connect(host='localhost', user='root', password='123', database='noval', charset = 'utf8')
+    except:
+        print("连接失败")
+        exit(-1)
+    cursor = db.cursor()
+    # sql = "select * from information.TABLES where TABLE_NAME = 'NOVAL';"
+    # if(cursor.execute(sql)):
+    #     print('历史记录在')
+    # else:
+    sql = """CREATE TABLE IF NOT EXISTS NOVAL(
+                Noval CHAR(20) NOT NULL,
+                Id INT,
+                Author CHAR(20),
+                Chapter CHAR(100));"""
+    cursor.execute(sql)
+    # cursor.close()
+    # db.close()
 
+def addNoval(readed_li):
+    sql = "insert into NOVAL (Noval, Id, Author) values (%s, %s, %s)"
+    global cursor, db 
+    cursor.execute(sql, readed_li)
+    db.commit()
 
+def  findNoval(readed_li):
+    novalname = readed_li[0]
+    sql = "select chapter from NOVAL where Noval=%s;"
+    global cursor 
+    cursor.execute(sql, novalname)
+    flag = cursor.fetchall()
+    return flag
+
+def updatedb(readed_li, table_result):
+    novalName = readed_li[0]
+    chapterName = table_result
+    sql = "update NOVAL set Chapter=%s where Noval=%s;"
+    global cursor, db
+    cursor.execute(sql , [chapterName, novalName])
+    db.commit()
 
 
 def read():
     os.system('clear')
+    createdb();
     cprint(figlet_format('Reader', font='doom'), 'green', attrs=['bold'])
     #os.system('clear') use 'cls' for windows
-    if not os.path.isfile('Favorites.txt'):
-        fp = open("Favorites.txt", 'w')
-    else:
-        fp = open('Favorites.txt', 'r')
-    try:
-        favorites = fp.readlines()
-    except:
-        print('favorites.txt dont have record ')
     print('\x1b[6;30;42m' + 'Read the novel in your terminal' + '\x1b[0m')
     keywords = input("输入书名搜索:")
-    readed_li = []
     # readed_li.append(keywords)
     search_result_raw = search(keywords)
     search_result = PrettyTable(["Index", "Title", "Author", "Updated to"])
@@ -110,8 +143,15 @@ def read():
         search_indexof += 1
     print(search_result)
     search_indexof_selected = input('Select a index to continue: ')
-    readed_li.append([search_result_raw[int(search_indexof_selected) - 1][1], search_result_raw[int(search_indexof_selected) - 1][0], search_result_raw[int(search_indexof_selected) - 1][2]])
+    readed_li = [search_result_raw[int(search_indexof_selected) - 1][1], int(search_result_raw[int(search_indexof_selected) - 1][0]), search_result_raw[int(search_indexof_selected) - 1][2]]
+    # print(readed_li)
     os.system('clear')
+    chapter = findNoval(readed_li)
+    if(chapter):
+        print(chapter)
+    else:
+        print("这是新书")
+        addNoval(readed_li)
     print('\x1b[6;30;42m' + search_result_raw[int(search_indexof_selected) - 1][1] + '\x1b[0m')
     table_web, table_result_raw = table(search_result_raw[int(search_indexof_selected) - 1][0])
     table_result = PrettyTable(["Index", "Title"])
@@ -143,6 +183,7 @@ def read():
             loc += 1
             table_indexof_selected += 1
             content(table_web,  table_result_raw[table_indexof_selected - 1][1])
+            updatedb(readed_li,  table_result_raw[loc + 1][0])
             # page_loc = turnpage(source + page_loc[1])
         elif turnpage_loc == ';q':
             os.system('clear')
@@ -152,4 +193,5 @@ def read():
 
 
 if __name__ == "__main__":
-	read()			
+    global cursor , db
+    read()			

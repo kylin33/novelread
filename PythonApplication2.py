@@ -63,7 +63,9 @@ def turnpage(page):
 		pointer_p = 'none'
 	return [pointer_p, pointer_n]
 
-if __name__ == "__main__":
+
+
+def read():
 	os.system('clear')
 	cprint(figlet_format('Reader', font='doom'), 'green', attrs=['bold'])
 	#os.system('clear') use 'cls' for windows
@@ -109,3 +111,9 @@ if __name__ == "__main__":
 		elif turnpage_loc == ';q':
 			os.system('clear')
 			sys.exit()
+		elif turnpage_loc == ';r':
+			read()
+
+
+if __name__ == "__main__":
+	read()			
