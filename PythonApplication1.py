@@ -4,32 +4,33 @@ from bs4 import BeautifulSoup
 from urllib.request import urlopen
 import os
 import sys
+import re
 from colorama import init
 init(strip=not sys.stdout.isatty())
 from termcolor import cprint 
 from pyfiglet import figlet_format
 from prettytable import PrettyTable
 
-source = "http://www.7qing7.com"
+source = "http://quduju.com"
 
 def search():
 	keywords = input("输入书名搜索:")
 	keyname = urllib.parse.quote(keywords)
 	result = []
-	search = urlopen(source + "/search.php?k=" + keyname).read().decode('utf-8')
-	bookinfo = BeautifulSoup(search, features='html.parser').find('div', class_="p_list9_1 s_l9").find_all('li')
+	search = urlopen(source + "/search/?q=" + keyname).read().decode('utf-8')
+	bookinfo = BeautifulSoup(search, features='html.parser').find('div', class_="novel").find("ul").find_all('li')
 	for items in bookinfo:
-		result.append([items.find('span', class_="pl_s1").find('a').get_text(), 
-			items.find('span', class_="pl_s1").find('a').get('href'),
-			items.find('span', class_="pl_s2").find('a').get_text(), 
-			items.find('span', class_="pl_s4").get_text()])
+		result.append([items.find('h4', class_="book-title").get_text(), 
+			items.find('a', class_="book-layout").get('href'),
+			items.find('span', class_="book-author").get_text(), 
+			items.find('p', class_="book-desc").get_text()])
 		#print(items.find('span',class_='pl_s1').find('a').get_text())
 	#print(result)
 	return result
 
 def table(bookid):
-	table = urlopen(source + "/mulu/" + bookid + ".html").read().decode('utf-8')
-	output_list = BeautifulSoup(table, features='html.parser').find('div', class_='t_list6').find_all('li')
+	table = urlopen(source + "/mulu/" + bookid + "/1.html").read().decode('utf-8')
+	output_list = BeautifulSoup(table, features='html.parser').find('ul', class_='novel-text-list').find_all('li')
 	tables = []
 
 	for link in output_list:
@@ -39,7 +40,7 @@ def table(bookid):
 
 def content(page):
 	content = urlopen(page).read().decode('utf-8')
-	out_text = BeautifulSoup(content, features='html.parser').find(id="chaptercontent").get_text().split()
+	out_text = BeautifulSoup(content, features='html.parser').find("div",class_="chaptercontent").get_text().split()
 	for ie in out_text:
 		print(ie)
 	#print(out_text)
@@ -47,8 +48,8 @@ def content(page):
 def turnpage(page):
 	turnpage = urlopen(page).read().decode('utf-8')
 	pointer = BeautifulSoup(turnpage, features='html.parser')
-	pointer_p = pointer.find('if', key="precid").find('a').get('href')
-	pointer_n = pointer.find('if', key="nextcid").find('a').get('href')
+	pointer_p = pointer.find('li', class_="end-itm prev").find('a').get('href')
+	pointer_n = pointer.find('li', class_="end-itm next").find('a').get('href')
 	if pointer_p == '':
 		pointer_p = 'none'
 	return [pointer_p, pointer_n]
@@ -62,13 +63,14 @@ if __name__ == "__main__":
 	search_result = PrettyTable(["Index", "Title", "Author", "Updated to"])
 	search_indexof = 1
 	for result_raw in search_result_raw:
-		search_result.add_row([search_indexof, result_raw[0], result_raw[2], result_raw[3][:10]])
+		desc = re.sub(r'[a-zA-Z",:{}]',"",result_raw[3])
+		search_result.add_row([search_indexof, result_raw[0], result_raw[2],desc[7:27]])
 		search_indexof += 1
 	print(search_result)
 	search_indexof_selected = input('Select a index to continue: ')
 	os.system('clear')
 	print('\x1b[6;30;42m' + search_result_raw[int(search_indexof_selected) - 1][0] + '\x1b[0m')
-	table_result_raw = table(search_result_raw[int(search_indexof_selected) - 1][1].replace('/', ''))
+	table_result_raw = table(search_result_raw[int(search_indexof_selected) - 1][1].split('.')[0].replace('/', ''))
 	table_result = PrettyTable(["Index", "Title"])
 	table_indexof = 1
 	for result_raw in table_result_raw:

@@ -16,7 +16,7 @@ ssl._create_default_https_context = ssl._create_unverified_context
 
 # from utils.plots import output_to_target
 init(strip=not sys.stdout.isatty())
-from termcolor import cprint 
+from termcolor import cprint
 from pyfiglet import figlet_format
 from prettytable import PrettyTable
 
@@ -27,37 +27,38 @@ source = "https://www.biqugeapp.com"
 rex = r"""(?<=[}\]"'])\s*,\s*(?!\s*[{["'])"""
 
 def search(keywords):
-	keyname = urllib.parse.quote(keywords)
-	result = []
-	try:
-		search = urlopen("https://sou.jiaston.com/search.aspx?key=" + keyname + "&page=1&siteid=app2").read().decode('GBK')
-	except SocketError as e:
-		if e.errno != errno.ECONNRESET:
-			raise
-		pass
-	bookinfo = BeautifulSoup(search, features='html.parser').getText()
-	bookinfo = json.loads(bookinfo)['data']
+    keyname = urllib.parse.quote(keywords)
+    result = []
+    try:
+        search = urlopen("https://sou.jiaston.com/search.aspx?key=" + keyname + "&page=1&siteid=app2").read().decode('GBK')
+        # search = urlopen("https://www.39txt.com/modules/article/search.php?q="+ keyname+"&page=1").read().decode("GBK")
+    except SocketError as e:
+        if e.errno != errno.ECONNRESET:
+            raise
+        pass
+    bookinfo = BeautifulSoup(search, features='html.parser').getText()
+    bookinfo = json.loads(bookinfo)['data']
 
-	for items in bookinfo[0:]:
-		result.append([items['Id'], 
-			items['Name'], 
-			items['Author'], 
-			items['Desc'][:20]]
+    for items in bookinfo[0:]:
+        result.append([items['Id'],
+            items['Name'],
+            items['Author'],
+            items['Desc'][:20]]
         )
-	return result
+    return result
 
 def table(bookid):
     bookid_ = int( int(bookid)/1000)+1
     # print(bookid, str(bookid_) )
     page = 'https://infos.anchengcn.com/BookFiles/Html/' + str(bookid_) + '/'+ bookid + '/index.html'
     table = urlopen(page).read()
-	# print(table)
+    # print(table)
     output_list = BeautifulSoup(table, features='html.parser').getText()
     output_list = re.sub(rex, "", output_list, 0)
     output_list = json.loads(output_list)['data']['list']
-    
+
     tables = []
-    
+
     for link in output_list:
         link_list = link['list']
         for li in link_list:
@@ -75,13 +76,13 @@ def content(web, page):
 
 
 def turnpage(page):
-	turnpage = urlopen(page).read().decode('GBK')
-	pointer = BeautifulSoup(turnpage, features='html.parser')
-	pointer_p = pointer.find('div', id="page_bar").find('a', id='prevLink').get('href')
-	pointer_n = pointer.find('div', id="page_bar").find('a', id='nextLink').get('href')
-	if pointer_p == '':
-		pointer_p = 'none'
-	return [pointer_p, pointer_n]
+    turnpage = urlopen(page).read().decode('GBK')
+    pointer = BeautifulSoup(turnpage, features='html.parser')
+    pointer_p = pointer.find('div', id="page_bar").find('a', id='prevLink').get('href')
+    pointer_n = pointer.find('div', id="page_bar").find('a', id='nextLink').get('href')
+    if pointer_p == '':
+        pointer_p = 'none'
+    return [pointer_p, pointer_n]
 
 def createdb():
     global cursor, db
@@ -106,14 +107,14 @@ def createdb():
 
 def addNoval(readed_li):
     sql = "insert into NOVAL (Noval, Id, Author) values (%s, %s, %s)"
-    global cursor, db 
+    global cursor, db
     cursor.execute(sql, readed_li)
     db.commit()
 
 def  findNoval(readed_li):
     novalname = readed_li[0]
     sql = "select chapter from NOVAL where Noval=%s;"
-    global cursor 
+    global cursor
     cursor.execute(sql, novalname)
     flag = cursor.fetchall()
     return flag
@@ -194,4 +195,4 @@ def read():
 
 if __name__ == "__main__":
     global cursor , db
-    read()			
+    read()

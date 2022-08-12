@@ -15,23 +15,23 @@ from prettytable import PrettyTable
 from socket import error as SocketError
 import errno
 
-source = "http://www.52kanshu.org"
+source = "http://www.39txt.org"
 
 def search():
 	keywords = input("输入书名搜索:")
 	keyname = urllib.parse.quote(keywords)
 	result = []
 	try:
-		search = urlopen(source + "/s_" + keyname).read().decode('GBK')
+		search = urlopen("https://www.ishubao.org" + "/modules/article/search.php?q=" + keyname).read().decode('GBK')
 	except SocketError as e:
 		if e.errno != errno.ECONNRESET:
 			raise
 		pass
-	bookinfo = BeautifulSoup(search, features='html.parser').find('div', class_="neirong").find_all('ul')
+	bookinfo = BeautifulSoup(search, features='html.parser').find('tbody').find_all('tr')
 
 	for items in bookinfo[1:]:
-		result.append([items.find('li', class_="neirong1").get_text(), 
-			items.find('li', class_="neirong1").find('a').get('href'), 
+		result.append([items.find('td', class_="odd").get_text(), 
+			items.find('li', class_="odd").find('a').get('href'), 
 			items.find('li', class_="neirong4").get_text(), 
 			items.find('li', class_="neirong2").get_text()])
 
